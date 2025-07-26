@@ -104,11 +104,11 @@ class sniffing_to_file:
         df = pd.DataFrame(self.dati)
         df = df.astype(str)
         df.to_csv('chekresult.csv')
-        #può essere interessante generare dati sintetici per l'addestramento decommentare il successivo
+        #puÃ² essere interessante generare dati sintetici per l'addestramento decommentare il successivo
         #df.to_parquet(self.FILE_PARQUET, index=False)
         #print(f"\nSniffing completato. File salvato in: {self.FILE_PARQUET}")
         return df
 
 #test run class numero di pacchetti che voglio catturare 
-df = sniffing_to_file(200).avvio_sniffing()
-print(df)
+#df = sniffing_to_file(200).avvio_sniffing()
+#print(df)
