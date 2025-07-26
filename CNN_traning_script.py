@@ -10,6 +10,7 @@ from tensorflow.keras.callbacks import EarlyStopping, ReduceLROnPlateau
 from tensorflow.keras.layers import Conv1D, MaxPooling1D, Dropout, Dense, BatchNormalization, GlobalMaxPooling1D
 from sklearn.utils import class_weight
 from sklearn.metrics import classification_report
+from joblib import dump as save_scaler
 
 # ======== 1. Caricamento e preparazione dataset ==========
 
@@ -20,6 +21,7 @@ dfs = [pd.read_parquet(f) for f in file_paths]
 df = pd.concat(dfs, ignore_index=True)
 #unique_values = df['Label'].unique()
 #print(unique_values)
+print(df.columns)
 #df.to_csv('dataset_check.csv')
 #print(df.head())
 #print(df.tail())
@@ -117,6 +119,10 @@ class_weight_var = class_weight.compute_class_weight(
 class_weights = dict(enumerate(class_weight_var)) # Converti in dizionario per keras
 print("Class weights:", class_weights)
 
+#salviamo lo scaler
+
+save_scaler(scaler, "scaler.pkl")
+
 # ======== 8. Costruzione della CNN ========
 def build_cnn_model(input_shape, num_classes=11):
     model = Sequential()
@@ -130,8 +136,13 @@ def build_cnn_model(input_shape, num_classes=11):
     model.add(MaxPooling1D(pool_size=2, padding='same'))
     model.add(Dropout(0.3))
 
+    model.add(Conv1D(128, 3, activation='relu', padding='same'))
+    model.add(BatchNormalization())
+    model.add(MaxPooling1D(pool_size=2, padding='same'))
+    model.add(Dropout(0.3))
+
     model.add(GlobalMaxPooling1D())
-    model.add(Dense(128, activation='relu'))
+    model.add(Dense(256, activation='relu'))
     model.add(Dropout(0.4))
     model.add(Dense(num_classes, activation='softmax'))
 
@@ -148,7 +159,7 @@ model.summary()
 # ==== 9.1 Evitiamo overfitting ====
 #il modello verifica ogni ciclo di addestramento
 #aspetta almeno 1 ciclo prima di fare check sui migliormaneti dell'apprendimento
-# così facciamo 2 epoche e tanto va bene lo stesso
+# cosÃ¬ facciamo 2 epoche e tanto va bene lo stesso
 callbacks_var = [
     EarlyStopping(patience=1, restore_best_weights=True), 
     ReduceLROnPlateau(patience=1, factor=0.5)             
@@ -189,34 +200,3 @@ plt.show()
 
 # ======== 11. Salva modello ========
 model.save("unclepaskm_cnn.h5")
-
-# 2 epoche:
-
-# 2 classes
-#               precision    recall  f1-score   support
-# 
-#            0       0.98      0.70      0.82    701117
-#            1       0.45      0.94      0.61    184421 <- più del 50% di falsi allarmi
-#                                                          che dovranno andare in BND
-#     accuracy                           0.75    885538
-#    macro avg       0.72      0.82      0.72    885538
-# weighted avg       0.87      0.75      0.78    885538
-
-# 11 classes
-#               precision    recall  f1-score   support
-# 
-#            0       0.96      0.03      0.06    899825
-#            1       0.14      0.93      0.24    115073
-#            2       0.00      0.00      0.00     28907
-#            3       0.00      0.00      0.00     18810
-#            4       0.03      0.06      0.04     23697
-#            5       0.02      0.58      0.04      8281
-#            6       0.18      0.71      0.29      1982
-#            7       0.01      0.37      0.02        68
-#            8       0.00      0.00      0.00        30
-#            9       0.00      0.00      0.00        10
-#           10       0.00      0.00      0.00        10
-# 
-#     accuracy                           0.13   1096693
-#    macro avg       0.12      0.24      0.06   1096693
-# weighted avg       0.80      0.13      0.07   1096693
